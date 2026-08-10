@@ -1,0 +1,29 @@
+# FeaturePilot Configuration
+# Place this at .feature/config.yaml in your project root
+
+id_prefix: FDO
+next_id: 1
+
+# Approval gates — what requires developer sign-off
+approval:
+  architecture: true
+  implementation: true
+  production_changes: true
+  git_push: true
+  merge: true
+
+# Code review settings
+code_review:
+  required: true
+  auto_fix: true
+  max_review_cycles: 3
+
+# Execution settings
+execution:
+  parallel: true
+  max_retries: 3
+
+# Git safety
+git:
+  auto_commit: false
+  auto_push: false
