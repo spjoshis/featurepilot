@@ -56,7 +56,13 @@ cp -r skills/feature /path/to/your/project/skills/
 | `/feature approve <ID>` | Approve plan for implementation |
 | `/feature archive <ID>` | Archive a completed feature |
 
-Individual phase commands: `explore`, `specify`, `brainstorm`, `design`, `plan`, `analyze`, `implement`, `test`, `converge`, `review`.
+You can also run any single phase directly as a subcommand of `/feature`:
+
+```
+/feature <phase> <ID>
+```
+
+where `<phase>` is one of `explore`, `specify`, `brainstorm`, `design`, `plan`, `analyze`, `implement`, `test`, `converge`, or `review` (for example, `/feature design FDO-001`).
 
 ## Execution Modes
 
