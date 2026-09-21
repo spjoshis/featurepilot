@@ -1,0 +1,22 @@
+{
+  "name": "param-play",
+  "description": "Param Play Studio's Claude Code plugins, including FeaturePilot — the spec-driven Feature Development Orchestrator.",
+  "owner": {
+    "name": "Param Play Studio",
+    "url": "https://github.com/spjoshis"
+  },
+  "plugins": [
+    {
+      "name": "featurepilot",
+      "source": "./",
+      "description": "Feature Development Orchestrator for Claude Code — turn a feature requirement into production-ready code via a spec-driven workflow.",
+      "version": "1.0.0",
+      "category": "development",
+      "tags": [
+        "orchestration",
+        "specification-driven-development",
+        "code-generation"
+      ]
+    }
+  ]
+}

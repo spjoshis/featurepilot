@@ -24,6 +24,18 @@ You focus on **what** to build. FeaturePilot manages **how** it gets built.
 
 ## Installation
 
+### Recommended — install as a Claude Code plugin
+
+```
+/plugin marketplace add spjoshis/featurepilot
+/plugin install featurepilot@param-play
+```
+
+This registers the marketplace and installs the plugin, making the `/feature`
+command available. Pull future updates with `/plugin marketplace update`.
+
+### Manual (no marketplace)
+
 Copy the `skills/feature/` directory into your Claude Code project's `skills/` folder:
 
 ```bash
