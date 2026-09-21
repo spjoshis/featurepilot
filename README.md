@@ -54,6 +54,9 @@ Individual phase commands: `explore`, `specify`, `brainstorm`, `design`, `plan`,
 
 ## How It Works
 
+> New here? See a full [worked example run](docs/example-run.md) that walks one requirement
+> through every phase with representative `.feature/` artifacts.
+
 ### Governance Plane
 Manages requirements, specifications, acceptance criteria, architecture (HLD/LLD), decisions, planning, traceability, and approval gates.
 
