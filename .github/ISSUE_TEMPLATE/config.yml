@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: FeaturePilot documentation
+    url: https://github.com/spjoshis/featurepilot#readme
+    about: Read the README for commands, execution modes, and configuration.
