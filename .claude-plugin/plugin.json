@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "featurepilot",
+  "displayName": "FeaturePilot",
+  "version": "1.0.0",
+  "description": "Feature Development Orchestrator for Claude Code — turn a feature requirement into production-ready code via a spec-driven workflow.",
+  "author": {
+    "name": "Param Play Studio",
+    "url": "https://github.com/spjoshis"
+  },
+  "homepage": "https://github.com/spjoshis/featurepilot",
+  "repository": "https://github.com/spjoshis/featurepilot",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "orchestration",
+    "specification-driven-development",
+    "code-generation",
+    "developer-tools",
+    "ai-agents"
+  ]
+}
