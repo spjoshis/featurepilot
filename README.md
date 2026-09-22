@@ -52,6 +52,7 @@ cp -r skills/feature /path/to/your/project/skills/
 | `/feature "req" --architecture=developer` | Expert mode — you provide the architecture |
 | `/feature list` | List all features |
 | `/feature status <ID>` | Show feature status |
+| `/feature doctor` | Health-check a project's `.feature/` config, constitution, and changes |
 | `/feature resume <ID>` | Resume an interrupted feature |
 | `/feature approve <ID>` | Approve plan for implementation |
 | `/feature archive <ID>` | Archive a completed feature |

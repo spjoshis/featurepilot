@@ -99,6 +99,10 @@ if (market) {
         if (p.source === "./" && plugin && p.name !== plugin.name) {
           warn(`${at}: entry name "${p.name}" differs from root plugin.json name "${plugin.name}"`);
         }
+        // A self-referential ("./") entry must not advertise a different version than the plugin.
+        if (p.source === "./" && plugin && p.version && plugin.version && p.version !== plugin.version) {
+          err(`${at}: version "${p.version}" != root plugin.json version "${plugin.version}"`);
+        }
       }
     });
   }
@@ -114,8 +118,15 @@ if (!existsSync(skillAbs)) {
   const fm = md.match(/^---\n([\s\S]*?)\n---/);
   if (!fm) {
     err(`${skillPath}: missing YAML frontmatter`);
-  } else if (!/^\s*name\s*:/m.test(fm[1])) {
-    err(`${skillPath}: frontmatter has no "name" field`);
+  } else {
+    if (!/^\s*name\s*:/m.test(fm[1])) {
+      err(`${skillPath}: frontmatter has no "name" field`);
+    }
+    // Keep the skill version in step with the plugin version (single-skill plugin).
+    const vm = fm[1].match(/^\s*version\s*:\s*["']?([^"'\n]+)["']?/m);
+    if (vm && plugin && plugin.version && vm[1].trim() !== plugin.version) {
+      warn(`${skillPath}: frontmatter version "${vm[1].trim()}" differs from plugin.json version "${plugin.version}"`);
+    }
   }
 }
 
