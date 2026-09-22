@@ -2,8 +2,8 @@
 name: "feature"
 description: "Feature Development Orchestrator — takes a requirement through explore, specify, design, plan, implement, test, review to completion via /feature."
 status: active
-version: "1.0.0"
-date: "2026-08-10"
+version: "1.1.0"
+date: "2026-09-21"
 slug: feature
 metadata:
   clawdbot:
@@ -38,6 +38,7 @@ Parse the user's input to determine the command:
 | `/feature "<req>" --architecture=developer` | Expert mode | Developer provides architecture; Claude handles spec/LLD/plan/impl |
 | `/feature list` | List features | Show all features with status |
 | `/feature status <ID>` | Show status | Detailed status of a feature |
+| `/feature doctor` | Health check | Validate `.feature/` config, constitution, and changes (read-only) |
 | `/feature resume <ID>` | Resume feature | Continue from last completed phase |
 | `/feature explore <ID>` | Run explore | Execute explore phase |
 | `/feature specify <ID>` | Run specify | Execute specification phase |
@@ -776,6 +777,84 @@ When `/feature status <ID>` is invoked:
 1. Read `change.yaml`
 2. If status is `implement`, read `tasks.yaml` for task progress
 3. Present detailed status with all phase statuses
+
+## Doctor (Health Check)
+
+When `/feature doctor` is invoked, run a **read-only** diagnostic of the project's
+`.feature/` setup and report findings. **Never modify or create files during doctor** —
+if fixes are needed, propose them and ask before changing anything.
+
+### Checks
+
+1. **Structure**
+   - `.feature/` exists. If not: report that FeaturePilot is not initialized here (running
+     `/feature` will create it) and stop.
+   - `.feature/config.yaml` exists. If missing: flag it (it is normally created on first
+     `/feature`).
+
+2. **`config.yaml`**
+   - Parses as valid YAML.
+   - Required keys present with correct types: `id_prefix` (non-empty string), `next_id`
+     (integer ≥ 1), `approval` (`architecture`, `implementation`, `production_changes`,
+     `git_push`, `merge` — all booleans), `code_review` (`required`, `auto_fix` booleans;
+     `max_review_cycles` integer ≥ 1), `execution` (`parallel` boolean; `max_retries`
+     integer ≥ 0), `git` (`auto_commit`, `auto_push` booleans).
+   - `next_id` is greater than the highest existing feature ID (see check 4); otherwise the
+     next feature would collide with an existing one — flag as an error.
+
+3. **`constitution.md`** (optional)
+   - If `.feature/constitution.md` is absent: info only (it is optional).
+   - If present: non-empty and contains at least one stated principle. Warn if it is empty
+     or a placeholder.
+
+4. **Changes** — for every `changes/<ID>-<slug>/change.yaml`:
+   - Parses as valid YAML.
+   - `status` is one of the valid lifecycle states (`new`, `explore`, `specify`, `discover`,
+     `brainstorm`, `architecture`, `hld`, `lld`, `plan`, `analyze`, `approval`, `implement`,
+     `test`, `converge`, `code_review`, `fix`, `complete`, `archive`, `blocked`).
+   - `type` is one of `feature|bugfix|enhancement|refactoring|performance|security|architecture|tech-debt`.
+   - `mode` is one of `guided|fast|expert`.
+   - Required fields present: `id`, `name`, `requirement`, and the phase status sub-objects.
+   - `id` matches the directory prefix (e.g. `FDO-001` in `FDO-001-slug/`); flag mismatches.
+   - No duplicate IDs across `changes/`.
+   - If `status: implement`, `tasks.yaml` exists and every task `status` is valid
+     (`pending|ready|in_progress|completed|validated|failed|blocked`).
+
+5. **Architecture** (optional)
+   - If `.feature/architecture/adr/` exists, ADR files follow `ADR-NNN-title.md`. Warn on
+     malformed names.
+
+### Output
+
+Present a concise report and an overall verdict:
+
+```
+FeaturePilot Doctor — .feature/ health check
+
+Structure
+  ✓ .feature/ present
+  ✓ config.yaml present
+
+Configuration
+  ✓ Required keys present and well-typed
+  ✗ next_id (3) is not greater than the highest existing ID (FDO-003) — next feature would collide
+
+Constitution
+  ⚠ .feature/constitution.md not found (optional)
+
+Changes (3)
+  ✓ FDO-001-bulk-document-processing — status: complete
+  ✗ FDO-002-search — status: "reviewing" is not a valid lifecycle state
+  ✓ FDO-003-notifications — status: plan
+
+Summary: 2 errors, 1 warning
+Status: ISSUES FOUND
+```
+
+Use `✓` (ok), `⚠` (warning, non-blocking), `✗` (error). End with
+`Status: HEALTHY` (no errors) or `Status: ISSUES FOUND`. For each `✗`/`⚠`, give a one-line
+suggested fix. If issues are found, offer to fix them and **wait for confirmation** before
+making any change.
 
 ## Execution Modes
 

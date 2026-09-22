@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "featurepilot",
   "displayName": "FeaturePilot",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Feature Development Orchestrator for Claude Code — turn a feature requirement into production-ready code via a spec-driven workflow.",
   "author": {
     "name": "Param Play Studio",

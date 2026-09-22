@@ -10,7 +10,7 @@
       "name": "featurepilot",
       "source": "./",
       "description": "Feature Development Orchestrator for Claude Code — turn a feature requirement into production-ready code via a spec-driven workflow.",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "development",
       "tags": [
         "orchestration",

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-21
+
+### Added
+- `/feature doctor` — a read-only health check for a project's `.feature/` setup. It
+  validates `config.yaml` (required keys, types, and `next_id` consistency), the optional
+  `constitution.md`, and every `change.yaml` / `tasks.yaml` (valid lifecycle/type/mode
+  values, `id` ↔ directory match, no duplicate IDs). Reports `✓`/`⚠`/`✗` with suggested
+  fixes and never modifies files without confirmation.
+
 ## [1.0.0] - 2026-09-21
 
 First installable release.
@@ -28,5 +37,6 @@ First installable release.
 - The manual install path (`cp -r skills/feature /path/to/project/skills/`) remains
   fully supported for backward compatibility.
 
-[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.1.0
 [1.0.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.0.0
