@@ -2,8 +2,8 @@
 name: "feature"
 description: "Feature Development Orchestrator — takes a requirement through explore, specify, design, plan, implement, test, review to completion via /feature."
 status: active
-version: "1.1.0"
-date: "2026-09-21"
+version: "1.2.0"
+date: "2026-09-24"
 slug: feature
 metadata:
   clawdbot:
@@ -36,7 +36,7 @@ Parse the user's input to determine the command:
 | `/feature "<requirement>"` | Start with requirement | Create feature and begin explore phase |
 | `/feature "<req>" --auto` | Fast mode | Run explore→specify→design→plan→analyze, then ask for one approval |
 | `/feature "<req>" --architecture=developer` | Expert mode | Developer provides architecture; Claude handles spec/LLD/plan/impl |
-| `/feature list` | List features | Show all features with status |
+| `/feature list [--status=<s>] [--type=<t>] [--mode=<m>] [--sort=<f>]` | List features | Show features with status, filterable and sortable |
 | `/feature status <ID>` | Show status | Detailed status of a feature |
 | `/feature doctor` | Health check | Validate `.feature/` config, constitution, and changes (read-only) |
 | `/feature resume <ID>` | Resume feature | Continue from last completed phase |
@@ -762,13 +762,22 @@ When `/feature resume <ID>` is invoked:
 When `/feature list` is invoked:
 
 1. Scan `.feature/changes/` for all `change.yaml` files
-2. Present table:
+2. If none exist, report: `No features yet. Run /feature "<requirement>" to start one.` and stop.
+3. Apply filters, if given (all are optional and combine with AND):
+   - `--status=<s>` — exact match against a valid lifecycle state (see Lifecycle States). Reject an unrecognized value with the list of valid states.
+   - `--type=<t>` — exact match against a valid `type` (see Feature Metadata).
+   - `--mode=<m>` — exact match against `guided|fast|expert`.
+4. Sort, default `id` ascending:
+   - `--sort=id` (default), `--sort=updated` (by `updated_at`, most recent first), `--sort=status` (lifecycle order, per Lifecycle States, earliest first)
+5. Present table:
    ```
    ID        Name                          Type      Status
    FDO-001   bulk-document-processing      feature   implement
-   FDO-002   search-improvements           feature   review
-   FDO-003   notification-system           feature   planning
+   FDO-002   search-improvements           feature   code_review
+   FDO-003   notification-system           feature   plan
    ```
+6. If filters matched zero features, report which filters were applied and that nothing matched — do not print an empty table.
+7. End with a count: `3 features shown` (or `2 of 5 features shown` when filtered).
 
 ## Status
 
