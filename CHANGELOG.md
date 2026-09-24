@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   linked acceptance criterion (possible scope creep). Never modifies `acceptance.yaml` or
   `tasks.yaml`.
 
+## [1.2.0] - 2026-09-24
+
+### Added
+- `/feature list` filtering and sorting — `--status=<s>`, `--type=<t>`, `--mode=<m>`
+  narrow the table (combined with AND); `--sort=id|updated|status` controls ordering
+  (default `id`). Reports a clear empty state (`No features yet...`) when
+  `.feature/changes/` has nothing, and distinguishes "no features exist" from "filters
+  matched none" instead of printing a blank table either way. Ends with a
+  `N features shown` / `N of M features shown` count.
+
 ## [1.1.0] - 2026-09-21
 
 ### Added
@@ -49,5 +59,6 @@ First installable release.
 
 [Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.3.0...HEAD
 [1.3.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.3.0
+[1.2.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.2.0
 [1.1.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.1.0
 [1.0.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.0.0
