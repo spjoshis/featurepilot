@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-09-24
+
+### Added
+- `/feature unblock <ID>` — diagnoses why a feature was marked `blocked` (reads the
+  blocked task's attempts/max_retries from `tasks.yaml` and the last recorded failure
+  from `implementation.md`/`test-results.md`) and, only on explicit confirmation, resets
+  the blocked task's attempt budget and returns the feature to its prior phase. Until
+  now `blocked` had no documented recovery path at all — `/feature resume` would try to
+  "execute the current phase" with no phase actually defined for that status.
+- `/feature resume` now explicitly detects `status: blocked` and points to
+  `/feature unblock` instead of attempting an undefined phase.
+
 ## [1.3.0] - 2026-09-24
 
 ### Added
@@ -57,7 +69,8 @@ First installable release.
 - The manual install path (`cp -r skills/feature /path/to/project/skills/`) remains
   fully supported for backward compatibility.
 
-[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.4.0
 [1.3.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.3.0
 [1.2.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.2.0
 [1.1.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.1.0
