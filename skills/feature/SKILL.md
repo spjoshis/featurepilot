@@ -2,7 +2,7 @@
 name: "feature"
 description: "Feature Development Orchestrator — takes a requirement through explore, specify, design, plan, implement, test, review to completion via /feature."
 status: active
-version: "1.2.0"
+version: "1.3.0"
 date: "2026-09-24"
 slug: feature
 metadata:
@@ -38,6 +38,7 @@ Parse the user's input to determine the command:
 | `/feature "<req>" --architecture=developer` | Expert mode | Developer provides architecture; Claude handles spec/LLD/plan/impl |
 | `/feature list [--status=<s>] [--type=<t>] [--mode=<m>] [--sort=<f>]` | List features | Show features with status, filterable and sortable |
 | `/feature status <ID>` | Show status | Detailed status of a feature |
+| `/feature trace <ID>` | Traceability report | Show Requirement → Acceptance Criteria → Task → Test coverage (read-only) |
 | `/feature doctor` | Health check | Validate `.feature/` config, constitution, and changes (read-only) |
 | `/feature resume <ID>` | Resume feature | Continue from last completed phase |
 | `/feature explore <ID>` | Run explore | Execute explore phase |
@@ -786,6 +787,56 @@ When `/feature status <ID>` is invoked:
 1. Read `change.yaml`
 2. If status is `implement`, read `tasks.yaml` for task progress
 3. Present detailed status with all phase statuses
+
+## Traceability (`/feature trace <ID>`)
+
+**Goal:** Show the Requirement → Acceptance Criteria → Task → Test chain for a single
+feature on demand, at any phase — not just the one-time snapshot `convergence.md`
+produces after the CONVERGE phase runs. This operationalizes the project's traceability
+requirement (Requirement → Acceptance Criteria → Task → Code → Test) as something a
+developer can query at any point, not only after convergence. This is a **read-only**
+report; it never modifies `acceptance.yaml`, `tasks.yaml`, or any other file.
+
+**Process:**
+1. Read `change.yaml`. If the ID doesn't exist, report that and stop.
+2. Read `acceptance.yaml`. If missing (feature hasn't reached SPECIFY yet), report:
+   `No acceptance criteria yet — traceability is available from the specify phase onward.`
+3. Read `tasks.yaml` if present (empty/absent before the PLAN phase).
+4. Read `convergence.md` if present, to show verified-by-test status instead of just
+   linkage.
+5. For each acceptance criterion, resolve its `tasks: []` IDs against `tasks.yaml` to get
+   task descriptions and status, and list its `tests: []` entries directly.
+6. Flag gaps that indicate incomplete traceability:
+   - An acceptance criterion with an empty `tasks: []` — not yet planned.
+   - An acceptance criterion with an empty `tests: []` after the feature has passed
+     IMPLEMENT — not yet verified.
+   - A task in `tasks.yaml` whose `acceptance_criteria: []` is empty — implementation
+     with no traced requirement (possible scope creep).
+
+**Output:**
+```
+FeaturePilot Traceability — FDO-002 search-improvements
+
+AC-001: "Search returns results within 200ms for catalogs under 10k items"
+  Tasks:  TASK-001 (completed) — Add search index
+          TASK-003 (in_progress) — Add query caching layer
+  Tests:  tests/search/index.test.js, tests/search/perf.test.js
+  Status: ✓ implemented, ✓ tested
+
+AC-002: "Search UI shows a loading state while a query is in flight"
+  Tasks:  (none — not yet planned)
+  Tests:  (none)
+  Status: ⚠ no tasks linked
+
+Untraced tasks (implement no acceptance criterion):
+  TASK-004 — Refactor search result cache eviction
+
+Summary: 2 acceptance criteria, 1 fully traced, 1 gap, 1 untraced task
+```
+
+Use `✓` for fully linked+verified, `⚠` for a gap (missing tasks or tests), consistent
+with the symbols `doctor` uses. This command never blocks or requires approval — it is
+purely informational.
 
 ## Doctor (Health Check)
 

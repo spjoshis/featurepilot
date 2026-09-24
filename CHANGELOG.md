@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-09-24
+
+### Added
+- `/feature trace <ID>` — a read-only Requirement → Acceptance Criteria → Task → Test
+  traceability report, queryable at any phase (not just the one-time snapshot
+  `convergence.md` produces after CONVERGE). Resolves each acceptance criterion's linked
+  tasks and tests, flags criteria with no tasks or no tests, and flags tasks with no
+  linked acceptance criterion (possible scope creep). Never modifies `acceptance.yaml` or
+  `tasks.yaml`.
+
 ## [1.2.0] - 2026-09-24
 
 ### Added
@@ -47,7 +57,8 @@ First installable release.
 - The manual install path (`cp -r skills/feature /path/to/project/skills/`) remains
   fully supported for backward compatibility.
 
-[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.3.0
 [1.2.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.2.0
 [1.1.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.1.0
 [1.0.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.0.0
