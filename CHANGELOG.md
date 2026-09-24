@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-09-24
+
+### Added
+- `/feature archive <ID>` now warns and requires explicit confirmation before archiving
+  a feature that isn't `status: complete` — previously it would silently move an
+  in-progress or `blocked` feature's directory out of `/feature list` and `doctor`'s
+  checks with no guardrail at all. Archiving a genuinely `complete` feature is
+  unaffected (still a normal one-step confirmation).
+- Directory Structure now documents `.feature/archive/` (it existed in behavior via
+  `/feature archive` but was never shown in the directory tree).
+
 ## [1.3.0] - 2026-09-24
 
 ### Added
@@ -57,7 +68,8 @@ First installable release.
 - The manual install path (`cp -r skills/feature /path/to/project/skills/`) remains
   fully supported for backward compatibility.
 
-[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.5.0
 [1.3.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.3.0
 [1.2.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.2.0
 [1.1.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.1.0

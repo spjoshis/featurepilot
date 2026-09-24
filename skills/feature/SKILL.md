@@ -2,7 +2,7 @@
 name: "feature"
 description: "Feature Development Orchestrator — takes a requirement through explore, specify, design, plan, implement, test, review to completion via /feature."
 status: active
-version: "1.3.0"
+version: "1.5.0"
 date: "2026-09-24"
 slug: feature
 metadata:
@@ -52,7 +52,7 @@ Parse the user's input to determine the command:
 | `/feature test <ID>` | Run test | Execute testing phase |
 | `/feature converge <ID>` | Run converge | Execute convergence check |
 | `/feature review <ID>` | Run review | Execute code review |
-| `/feature archive <ID>` | Archive feature | Move feature to archived state |
+| `/feature archive <ID>` | Archive feature | Move feature to `.feature/archive/`; warns first if not yet `complete` |
 
 ## Directory Structure
 
@@ -66,24 +66,26 @@ All feature state lives in `.feature/` at the project root.
 │   ├── overview.md              # Project architecture overview
 │   └── adr/                     # Architecture Decision Records
 │       └── ADR-NNN-title.md
-└── changes/
-    └── FDO-NNN-slug/
-        ├── change.yaml          # Feature metadata and status
-        ├── exploration.md       # Phase 2 output
-        ├── requirements.md      # Functional/non-functional requirements
-        ├── acceptance.yaml      # Acceptance criteria
-        ├── codebase-context.md  # Phase 4 output
-        ├── brainstorm.md        # Phase 6 output
-        ├── hld.md               # High-level design
-        ├── lld.md               # Low-level design
-        ├── decisions.md         # Architecture decisions for this feature
-        ├── plan.md              # Development plan
-        ├── tasks.yaml           # Task list with dependencies and status
-        ├── analysis.md          # Cross-artifact consistency analysis
-        ├── implementation.md    # Implementation log
-        ├── test-results.md      # Test execution results
-        ├── convergence.md       # Convergence report
-        └── code-review.md       # Code review findings
+├── changes/
+│   └── FDO-NNN-slug/
+│       ├── change.yaml          # Feature metadata and status
+│       ├── exploration.md       # Phase 2 output
+│       ├── requirements.md      # Functional/non-functional requirements
+│       ├── acceptance.yaml      # Acceptance criteria
+│       ├── codebase-context.md  # Phase 4 output
+│       ├── brainstorm.md        # Phase 6 output
+│       ├── hld.md               # High-level design
+│       ├── lld.md               # Low-level design
+│       ├── decisions.md         # Architecture decisions for this feature
+│       ├── plan.md              # Development plan
+│       ├── tasks.yaml           # Task list with dependencies and status
+│       ├── analysis.md          # Cross-artifact consistency analysis
+│       ├── implementation.md    # Implementation log
+│       ├── test-results.md      # Test execution results
+│       ├── convergence.md       # Convergence report
+│       └── code-review.md       # Code review findings
+└── archive/
+    └── FDO-NNN-slug/            # Same layout as changes/, moved here by /feature archive
 ```
 
 ## Configuration — `.feature/config.yaml`
@@ -739,7 +741,31 @@ If FAILED:
 
 ### ARCHIVE
 
-Archive moves a completed feature's directory to `.feature/archive/`.
+**Goal:** Move a finished feature out of the active list without losing its history.
+
+**Process:**
+1. Read `change.yaml` for the feature. If the ID doesn't exist, report that and stop.
+2. If `status` is `complete` (the expected case): confirm normally — "Archive FDO-NNN —
+   <name>? This moves its directory to `.feature/archive/`." — then proceed on
+   confirmation.
+3. If `status` is anything else (still in progress, or `blocked`): this is a guardrail
+   case, not the normal path. Warn explicitly:
+   ```
+   FDO-NNN is not complete (status: <status>). Archiving now removes it from
+   /feature list and .feature/ doctor checks while it's still in-progress work —
+   it will not show up as something to resume.
+   ```
+   Ask for explicit confirmation before proceeding; do not archive automatically just
+   because the developer typed the command. If the developer wants to abandon
+   in-progress work, archiving is fine — this step exists only to prevent an
+   *accidental* archive of something still being worked on.
+4. On confirmation, move `.feature/changes/FDO-NNN-slug/` to
+   `.feature/archive/FDO-NNN-slug/` and set `status: archive`.
+5. Report the new location.
+
+Archived features are intentionally excluded from `/feature list` (which only scans
+`.feature/changes/`) and from `doctor`'s change validation — they are historical record,
+not active work.
 
 ## Resume Logic
 
