@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-09-26
+
+### Added
+- Feature ID allocation (`/feature "<requirement>"` creation) is now collision-safe:
+  before generating an ID, it scans `.feature/changes/` and `.feature/archive/` for the
+  highest existing ID and self-corrects `config.yaml`'s `next_id` if it has drifted
+  behind reality, instead of trusting a counter that could be stale (concurrent
+  `/feature` runs on the same project, a hand-edited or restored `config.yaml`, or a
+  feature directory created outside the normal flow could all previously cause two
+  features to collide on the same ID). `doctor` check 2 (stale `next_id`) remains as a
+  backstop for drift introduced outside the creation flow.
+
 ## [1.7.0] - 2026-09-26
 
 ### Added
@@ -89,7 +101,8 @@ First installable release.
 - The manual install path (`cp -r skills/feature /path/to/project/skills/`) remains
   fully supported for backward compatibility.
 
-[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.8.0...HEAD
+[1.8.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.8.0
 [1.7.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.7.0
 [1.6.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.6.0
 [1.3.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.3.0
