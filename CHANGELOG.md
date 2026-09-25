@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-09-26
+
+### Added
+- `/feature unblock <ID>` — diagnoses why a feature was marked `blocked` (reads the
+  blocked task's attempts/max_retries from `tasks.yaml` and the last recorded failure
+  from `implementation.md`/`test-results.md`) and, only on explicit confirmation, resets
+  the blocked task's attempt budget and returns the feature to its prior phase. Until
+  now `blocked` had no documented recovery path at all — `/feature resume` would try to
+  "execute the current phase" with no phase actually defined for that status.
+- `/feature resume` now explicitly detects `status: blocked` and points to
+  `/feature unblock` instead of attempting an undefined phase.
+- `/feature archive <ID>` now warns and requires explicit confirmation before archiving
+  a feature that isn't `status: complete` — previously it would silently move an
+  in-progress or `blocked` feature's directory out of `/feature list` and `doctor`'s
+  checks with no guardrail at all. Archiving a genuinely `complete` feature is
+  unaffected (still a normal one-step confirmation).
+- Directory Structure now documents `.feature/archive/` (it existed in behavior via
+  `/feature archive` but was never shown in the directory tree).
+
 ## [1.6.0] - 2026-09-24
 
 ### Added
@@ -70,7 +89,8 @@ First installable release.
 - The manual install path (`cp -r skills/feature /path/to/project/skills/`) remains
   fully supported for backward compatibility.
 
-[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.7.0
 [1.6.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.6.0
 [1.3.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.3.0
 [1.2.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.2.0
