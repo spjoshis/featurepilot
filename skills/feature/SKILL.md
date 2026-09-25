@@ -2,7 +2,7 @@
 name: "feature"
 description: "Feature Development Orchestrator — takes a requirement through explore, specify, design, plan, implement, test, review to completion via /feature."
 status: active
-version: "1.8.0"
+version: "1.9.0"
 date: "2026-09-26"
 slug: feature
 metadata:
@@ -152,6 +152,7 @@ testing:
 
 convergence:
   status: pending                # pending|passed|failed
+  cycle: 0
 
 code_review:
   status: pending                # pending|passed|changes_required
@@ -679,14 +680,19 @@ If tests fail:
 ```
 
 If FAILED:
+- Increment `convergence.cycle`
 - Generate new tasks for missing criteria
 - Add tasks to `tasks.yaml`
 - Execute the new tasks (return to IMPLEMENT for those tasks)
 - Re-run TEST
 - Re-run CONVERGE
-- Max 2 convergence cycles before requesting developer help
+- If `convergence.cycle >= 2`: do not keep looping. Set `status: blocked` and
+  `convergence.status: failed`, leaving the unresolved criteria recorded in
+  `convergence.md`'s "Missing Implementation" section (this is the diagnosis
+  `/feature unblock` reads). Report to the developer that convergence is blocked and
+  point them to `/feature unblock <ID>` rather than silently retrying forever.
 
-**Update:** Set `status: code_review`, `convergence.status: passed|failed`
+**Update on pass:** Set `status: code_review`, `convergence.status: passed`
 
 ### Phase 12 — CODE REVIEW
 
@@ -742,8 +748,12 @@ If FAILED:
 4. Re-run tests (Phase 10)
 5. Re-run convergence (Phase 11)
 6. Re-run code review (Phase 12)
-7. If still CHANGES REQUIRED and `cycle < max_review_cycles`, repeat
-8. If `cycle >= max_review_cycles`, present remaining findings to developer
+7. If still CHANGES REQUIRED and `code_review.cycle < max_review_cycles`, repeat
+8. If `code_review.cycle >= max_review_cycles`: do not keep looping. Set `status: blocked`
+   and leave `code_review.status: changes_required`, with the remaining findings still in
+   `code-review.md` (this is the diagnosis `/feature unblock` reads). Report to the
+   developer that review remediation is blocked and point them to
+   `/feature unblock <ID>`.
 
 **Update on pass:** Set `status: complete`
 
@@ -821,23 +831,35 @@ When `/feature resume <ID>` is invoked:
 ## Unblock (`/feature unblock <ID>`)
 
 **Goal:** Diagnose why a feature was marked `blocked` and — only on explicit
-confirmation — give it a fresh attempt budget. `blocked` is set when a task exhausts
-`max_retries` (IMPLEMENT) or the fix cycle limit is exhausted (TEST/FIX); until now
-nothing in this skill describes how to recover from it, so a blocked feature had no
-documented way forward.
+confirmation — give it a fresh attempt/cycle budget. `blocked` is set from four distinct
+places, and each leaves a different trail. Diagnosis must identify which one applies
+before proposing a fix — resetting the wrong counter (e.g. task `attempts` when the real
+exhaustion was `code_review.cycle`) would silently fail to unblock anything.
+
+| Origin | Set when | Trail | Reset on confirm |
+|---|---|---|---|
+| IMPLEMENT | a task's `attempts >= max_retries` | `tasks.yaml` task `status: blocked`; last error in `implementation.md` | task `attempts: 0`, `status: ready`/`pending`; feature `status: implement` |
+| TEST | fix-cycle exhaustion during test remediation | last failure in `test-results.md` | feature `status: test` (task-level reset as above if a task is also `blocked`) |
+| CONVERGE | `convergence.cycle >= 2` with unresolved criteria | unresolved ACs in `convergence.md`'s "Missing Implementation" | `convergence.cycle: 0`, `convergence.status: pending`; feature `status: converge` |
+| CODE_REVIEW / FIX | `code_review.cycle >= max_review_cycles` with findings still open | open findings in `code-review.md` | `code_review.cycle: 0`, `code_review.status: pending`; feature `status: code_review` |
 
 **Process:**
 1. Read `change.yaml`. If the ID doesn't exist, report that and stop.
 2. If `status` is not `blocked`, report `FDO-NNN is not blocked (status: <status>).` and
    stop — there is nothing to unblock.
-3. Diagnose:
-   - Read `tasks.yaml` and find every task with `status: blocked`, showing its
-     `description`, `attempts`/`max_retries`, and `dependencies`.
-   - Read the tail of `implementation.md` (IMPLEMENT-phase blocks) or `test-results.md`
-     (TEST/FIX-phase blocks), whichever is more recent, for the last recorded failure
-     detail. Best-effort — if neither exists or has no relevant entry, say so rather
-     than guessing.
-4. Present the diagnosis:
+3. Diagnose, checking each possible origin in turn (more than one can apply, e.g. a
+   blocked task plus a separately exhausted review cycle — report all that apply):
+   - **IMPLEMENT/TEST:** read `tasks.yaml` for every task with `status: blocked`
+     (`description`, `attempts`/`max_retries`, `dependencies`), and the tail of
+     `implementation.md` or `test-results.md` (whichever is more recent) for the last
+     recorded failure.
+   - **CONVERGE:** if `convergence.cycle >= 2`, read `convergence.md`'s "Missing
+     Implementation" section for the acceptance criteria still unresolved.
+   - **CODE_REVIEW/FIX:** if `code_review.cycle >= max_review_cycles`, read
+     `code-review.md` for findings still open after the last fix cycle.
+   - Best-effort throughout — if an expected file is missing or has no relevant entry,
+     say so rather than guessing.
+4. Present the diagnosis, naming the specific origin(s), e.g.:
    ```
    FDO-NNN is blocked.
 
@@ -847,14 +869,22 @@ documented way forward.
 
    This looks like an environment/connectivity issue, not a code defect.
    ```
-5. Ask explicitly: "Retry TASK-004 with a fresh attempt budget?" Do **not** change
-   any file until the developer confirms.
-6. On confirmation:
-   - Reset the blocked task's `attempts: 0` in `tasks.yaml`, set its `status: ready`
-     (or `pending` if its dependencies are themselves not yet `completed`)
-   - Set the feature's `status` back to the phase it was blocked from (`implement` or
-     `test`)
-   - Report what changed and that the developer can now `/feature resume <ID>`
+   or, for a cycle-exhaustion origin:
+   ```
+   FDO-NNN is blocked.
+
+   Code review remediation exhausted its cycle budget: 3 / 3 fix→test→review cycles.
+   Findings still open (from code-review.md):
+     - [HIGH] Missing input validation on batch size — TASK-006
+
+   This needs either a manual fix or a larger cycle budget before retrying.
+   ```
+5. Ask explicitly what to retry, naming the specific counter (e.g. "Retry TASK-004 with
+   a fresh attempt budget?" or "Retry code review remediation with a fresh cycle
+   budget?"). Do **not** change any file until the developer confirms.
+6. On confirmation, apply only the reset(s) for the confirmed origin(s), per the table
+   above, and set the feature's `status` back to the corresponding phase. Report what
+   changed and that the developer can now `/feature resume <ID>`.
 7. If the developer declines, or asks to investigate further first, make no changes —
    this command is safe to run repeatedly while diagnosing.
 
