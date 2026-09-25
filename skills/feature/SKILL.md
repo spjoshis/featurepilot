@@ -2,8 +2,8 @@
 name: "feature"
 description: "Feature Development Orchestrator — takes a requirement through explore, specify, design, plan, implement, test, review to completion via /feature."
 status: active
-version: "1.7.0"
-date: "2026-09-24"
+version: "1.8.0"
+date: "2026-09-26"
 slug: feature
 metadata:
   clawdbot:
@@ -178,8 +178,22 @@ Valid status values for `change.yaml` status field:
 
 1. Parse the command to extract requirement text and flags (`--auto`, `--architecture=developer`)
 2. Read `.feature/config.yaml` — create with defaults if missing
-3. Generate the next feature ID: `{id_prefix}-{next_id}` (zero-padded to 3 digits)
-4. Increment `next_id` in config
+3. Determine the next feature ID safely. `config.yaml`'s `next_id` can drift behind
+   reality — concurrent `/feature` runs on the same project, a manually edited or
+   restored `config.yaml`, or a feature directory created outside this flow can all
+   leave it stale, and a stale counter means the new feature collides with (and can
+   overwrite) an existing one:
+   a. Scan `.feature/changes/` and `.feature/archive/` for existing `{id_prefix}-NNN`
+      directories and find the highest existing `NNN`.
+   b. Compute the candidate as `max(config.next_id, highest existing NNN + 1)`. If this
+      is greater than the `next_id` currently in `config.yaml`, correct `config.yaml` to
+      match — this is the same drift `doctor` check 2 detects after the fact; fixing it
+      here prevents the collision instead of only reporting it later.
+   c. Generate the ID: `{id_prefix}-{next_id}` (zero-padded to 3 digits).
+   d. Final safety net: if `.feature/changes/{id}-*` or `.feature/archive/{id}-*` already
+      exists for the computed ID (shouldn't happen after (b), but directories can be
+      created outside this flow), increment and recheck until the ID is free.
+4. Increment `next_id` in config past the ID just allocated
 5. Create the slug from the requirement (kebab-case, max 50 chars)
 6. Create `.feature/changes/FDO-NNN-slug/`
 7. Write `change.yaml` with initial metadata
@@ -946,7 +960,9 @@ if fixes are needed, propose them and ask before changing anything.
      `max_review_cycles` integer ≥ 1), `execution` (`parallel` boolean; `max_retries`
      integer ≥ 0), `git` (`auto_commit`, `auto_push` booleans).
    - `next_id` is greater than the highest existing feature ID (see check 4); otherwise the
-     next feature would collide with an existing one — flag as an error.
+     next feature would collide with an existing one — flag as an error. (Starting a
+     Feature now self-corrects this at creation time; this check remains a backstop for
+     drift introduced outside that flow, e.g. a hand-edited `config.yaml`.)
 
 3. **`constitution.md`** (optional)
    - If `.feature/constitution.md` is absent: info only (it is optional).
