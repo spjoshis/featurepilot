@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-09-26
+
+### Fixed
+- `blocked` status is now set consistently across every phase that has a retry/cycle
+  limit. Previously only IMPLEMENT (task `attempts >= max_retries`) and the informal
+  TEST/FIX path set `status: blocked`; CONVERGE (`convergence.cycle >= 2` with
+  unresolved acceptance criteria) and CODE_REVIEW/FIX (`code_review.cycle >=
+  max_review_cycles` with findings still open) instead left the feature "presented to
+  the developer" with no state change and no recorded way forward. Both now formally
+  set `status: blocked`, and `/feature unblock` is extended to diagnose and — on
+  confirmation — recover from all four origins (reading `convergence.md` or
+  `code-review.md` in addition to `tasks.yaml`/`implementation.md`/`test-results.md`,
+  and resetting the correct counter: task `attempts`, or the new `convergence.cycle` /
+  existing `code_review.cycle`).
+- `change.yaml` gains `convergence.cycle` (mirroring the existing `code_review.cycle`)
+  so convergence retries are tracked the same way review cycles already are.
+
 ## [1.8.0] - 2026-09-26
 
 ### Added
@@ -101,7 +118,8 @@ First installable release.
 - The manual install path (`cp -r skills/feature /path/to/project/skills/`) remains
   fully supported for backward compatibility.
 
-[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.9.0
 [1.8.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.8.0
 [1.7.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.7.0
 [1.6.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.6.0
