@@ -2,7 +2,7 @@
 name: "feature"
 description: "Feature Development Orchestrator — takes a requirement through explore, specify, design, plan, implement, test, review to completion via /feature."
 status: active
-version: "1.3.0"
+version: "1.6.0"
 date: "2026-09-24"
 slug: feature
 metadata:
@@ -63,7 +63,7 @@ All feature state lives in `.feature/` at the project root.
 ├── constitution.md              # Project engineering principles (optional)
 ├── config.yaml                  # FDO configuration
 ├── architecture/
-│   ├── overview.md              # Project architecture overview
+│   ├── overview.md              # Cross-feature architecture memory (see Phase 3 — DISCOVER)
 │   └── adr/                     # Architecture Decision Records
 │       └── ADR-NNN-title.md
 └── changes/
@@ -245,6 +245,12 @@ acceptance_criteria:
 **Goal:** Understand the existing codebase before designing.
 
 **Process:**
+0. Read `.feature/architecture/overview.md` if it exists. This is durable,
+   project-level architecture memory shared across every feature — unlike
+   `codebase-context.md`, which is written fresh per feature. If it exists, give it to
+   the Explore agent as known baseline context so discovery focuses on what's new or
+   relevant to *this* feature instead of re-deriving fundamentals (tech stack, overall
+   architecture) that are already documented and haven't changed.
 1. Spawn an Explore agent to scan the codebase:
    - Application architecture and patterns
    - Relevant modules and services
@@ -268,6 +274,17 @@ acceptance_criteria:
 - Existing patterns to follow
 - Available skills and agents
 - Available test commands
+
+**Maintain `.feature/architecture/overview.md`:**
+- If it doesn't exist yet, create it from this discovery's durable, project-level
+  findings only (architecture summary, tech stack, cross-cutting patterns) — not the
+  feature-specific "impacted components" section, which belongs solely in
+  `codebase-context.md`.
+- If it already exists and this discovery surfaced something durable that isn't
+  reflected in it (a new major component, a pattern change), propose the specific
+  addition and **ask before writing** — this file is meant to stay a stable, curated
+  summary, not be silently rewritten by every feature's discovery churn.
+- If it exists and nothing new was found, leave it untouched.
 
 **Update:** Set `status: brainstorm`
 
@@ -883,6 +900,9 @@ if fixes are needed, propose them and ask before changing anything.
 5. **Architecture** (optional)
    - If `.feature/architecture/adr/` exists, ADR files follow `ADR-NNN-title.md`. Warn on
      malformed names.
+   - If `.feature/architecture/overview.md` is absent: info only (it's created
+     automatically by the first DISCOVER phase that runs — see Phase 3).
+   - If present: non-empty and not a placeholder. Warn if it is empty.
 
 ### Output
 
