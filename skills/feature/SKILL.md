@@ -2,7 +2,7 @@
 name: "feature"
 description: "Feature Development Orchestrator — takes a requirement through explore, specify, design, plan, implement, test, review to completion via /feature."
 status: active
-version: "1.12.0"
+version: "1.13.0"
 date: "2026-10-03"
 slug: feature
 metadata:
@@ -57,6 +57,7 @@ Parse the user's input to determine the command:
 | `/feature converge <ID>` | Run converge | Execute convergence check |
 | `/feature review <ID>` | Run review | Execute code review |
 | `/feature archive <ID>` | Archive feature | Move feature to `.feature/archive/`; warns first if not yet `complete` |
+| `/feature learn <ID>` | Capture lessons | Distill a completed feature's durable lessons into `.feature/knowledge/` (append-only, asks first) |
 
 ## Directory Structure
 
@@ -70,6 +71,12 @@ All feature state lives in `.feature/` at the project root.
 │   ├── overview.md              # Cross-feature architecture memory (see Phase 3 — DISCOVER)
 │   └── adr/                     # Architecture Decision Records
 │       └── ADR-NNN-title.md
+├── knowledge/                   # Project engineering memory, distilled by /feature learn
+│   ├── patterns.md              # Reusable patterns the codebase follows
+│   ├── pitfalls.md              # Traps/gotchas discovered the hard way
+│   ├── testing.md               # Testing rules that proved necessary
+│   ├── architecture.md          # Durable architecture lessons
+│   └── decisions.md             # Notable decisions and rationale (pointers to ADRs)
 ├── changes/
 │   └── FDO-NNN-slug/
 │       ├── change.yaml          # Feature metadata and status
@@ -272,6 +279,10 @@ acceptance_criteria:
    the Explore agent as known baseline context so discovery focuses on what's new or
    relevant to *this* feature instead of re-deriving fundamentals (tech stack, overall
    architecture) that are already documented and haven't changed.
+   Also read `.feature/knowledge/*.md` if present — the patterns, pitfalls, testing rules,
+   and decisions that prior completed features distilled via `/feature learn`. Give these to
+   the Explore agent too, so discovery (and the design that follows) starts from hard-won
+   lessons instead of rediscovering them.
 1. Spawn an Explore agent to scan the codebase:
    - Application architecture and patterns
    - Relevant modules and services
@@ -1267,6 +1278,9 @@ if fixes are needed, propose them and ask before changing anything.
    - If `.feature/architecture/overview.md` is absent: info only (it's created
      automatically by the first DISCOVER phase that runs — see Phase 3).
    - If present: non-empty and not a placeholder. Warn if it is empty.
+   - If `.feature/knowledge/` is absent: info only (it's created by the first
+     `/feature learn` that runs — see "Feature Learning"). If present, each `*.md` in it is
+     non-empty; warn on an empty knowledge file.
 
 ### Output
 
@@ -1299,6 +1313,92 @@ Use `✓` (ok), `⚠` (warning, non-blocking), `✗` (error). End with
 `Status: HEALTHY` (no errors) or `Status: ISSUES FOUND`. For each `✗`/`⚠`, give a one-line
 suggested fix. If issues are found, offer to fix them and **wait for confirmation** before
 making any change.
+
+## Feature Learning (`/feature learn <ID>`)
+
+**Goal:** Turn a *completed* feature's accumulated knowledge — the review findings,
+convergence results, architecture decisions, failed attempts, and testing lessons that
+otherwise stay buried in `.feature/changes/FDO-NNN/` — into durable, project-level
+engineering memory under `.feature/knowledge/`, so future features' DISCOVER and ARCHITECTURE
+phases start from hard-won lessons instead of rediscovering them. This closes the loop:
+
+```
+Feature → Implementation → Review → Learn → Project memory → better next feature
+```
+
+Unlike the read-only report commands (`impact`/`evolve`/`simulate`/`trace`/`doctor`), `learn`
+*writes* — but conservatively. It only **appends** curated entries to `.feature/knowledge/*.md`,
+never overwrites or rewrites an existing entry, and it **asks before writing** (the same
+discipline DISCOVER uses before touching `architecture/overview.md`). Every entry is attributed
+to its source feature, so project memory stays traceable rather than becoming anonymous
+folklore.
+
+**Availability:** You learn from finished work. `learn` expects `status: complete` (or an
+archived feature). If the feature is not complete, report:
+`FDO-NNN is not complete (status: <status>) — learn captures lessons from finished features.`
+and ask for explicit confirmation before capturing lessons from an unfinished feature; make no
+changes unless the developer confirms.
+
+**Knowledge store** (`.feature/knowledge/`, created on first `learn`):
+
+| File | Holds |
+|---|---|
+| `patterns.md` | Reusable patterns the codebase follows |
+| `pitfalls.md` | Traps / gotchas discovered the hard way |
+| `testing.md` | Testing rules and conventions that proved necessary |
+| `architecture.md` | Durable architecture lessons |
+| `decisions.md` | Notable decisions and their rationale (pointers to ADRs) |
+
+**Process:**
+1. Read `change.yaml`. If the ID doesn't exist, report that and stop. Check completeness per
+   Availability above.
+2. Mine the feature's artifacts for durable, *generalizable* lessons — rules that will hold for
+   future features, not facts true only of this one (best-effort; skip absent artifacts):
+   - `code-review.md` — recurring finding categories → `pitfalls.md` / `patterns.md`.
+   - `convergence.md` + `test-results.md` — what had to be tested, what nearly slipped →
+     `testing.md`.
+   - `decisions.md` and `.feature/architecture/adr/` — decisions with lasting rationale →
+     `decisions.md` / `architecture.md`.
+   - `implementation.md` — failed attempts/retries and how they were resolved → `pitfalls.md`.
+   - `codebase-context.md` — existing patterns the feature had to follow → `patterns.md`.
+3. Phrase each candidate as a short, reusable rule (one or two lines) tagged with the source
+   feature, e.g. `- All external API calls use a 5s timeout + exponential retry. (FDO-012)`.
+   Discard anything that is only true for this single feature.
+4. De-duplicate against what the knowledge files already contain. If an equivalent rule is
+   already recorded, do not re-add it (you may note it is now reinforced by another feature).
+   Never edit or delete an existing entry.
+5. Present the proposed additions grouped by target file and **wait for confirmation**. On
+   confirmation, create `.feature/knowledge/` if needed and **append** the confirmed entries
+   under the right files; then report exactly what was written. If the developer declines,
+   write nothing — `learn` is safe to run repeatedly while deciding.
+
+**Output (proposal — nothing is written yet):**
+```
+Feature Learning — FDO-012 bulk-upload-hardening (status: complete)
+
+Proposed additions to .feature/knowledge/ (nothing written yet):
+
+patterns.md
+  + All external API calls use a 5s timeout + exponential retry.  (FDO-012)
+
+pitfalls.md
+  + Direct writes to document_jobs bypass audit events — always go through
+    document-service.  (FDO-012)
+
+testing.md
+  + Integration tests are required when modifying a queue consumer.  (FDO-012)
+
+Already recorded (skipped): "Search indexing must be asynchronous" — present from FDO-008.
+
+Write these 3 entries? (y / n)
+```
+
+After writing, confirm concretely, e.g.:
+`Appended 3 entries to .feature/knowledge/ (patterns.md, pitfalls.md, testing.md).`
+
+These files then feed DISCOVER (Phase 3), which reads `.feature/knowledge/` as baseline
+context on every subsequent feature — so the lessons actively shape future discovery and
+design rather than sitting inert.
 
 ## Execution Modes
 

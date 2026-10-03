@@ -61,6 +61,7 @@ cp -r skills/feature /path/to/your/project/skills/
 | `/feature unblock <ID>` | Diagnose a `blocked` feature and, on confirmation, retry it |
 | `/feature approve <ID>` | Approve plan for implementation |
 | `/feature archive <ID>` | Archive a completed feature |
+| `/feature learn <ID>` | Distill a completed feature's lessons into `.feature/knowledge/` (append-only, asks first) |
 
 You can also run any single phase directly as a subcommand of `/feature`:
 
