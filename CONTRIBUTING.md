@@ -37,6 +37,12 @@ exercise the workflow.
 
 - **Keep the skill focused.** `SKILL.md` is an instruction document; favor clarity and
   determinism over cleverness. Preserve the phase lifecycle and traceability contract.
+- **Respect the progressive-disclosure split.** `skills/feature/SKILL.md` is the lean control
+  layer (routing, data contracts, always-on rules). Detailed behavior lives in
+  `skills/feature/reference/lifecycle.md` (phase playbook) and
+  `skills/feature/reference/commands.md` (management/query command specs). Add phase or command
+  detail to the matching reference file and keep SKILL.md lean; if you add a command, add its
+  routing row to SKILL.md's command table and its full spec to `reference/commands.md`.
 - **Don't break the command surface.** The public commands are `/feature` and its
   subcommands (`/feature <phase> <ID>`). Changing or removing one is a breaking change and
   must be called out explicitly.

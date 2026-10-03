@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-10-03
+
+### Changed
+- **Progressive disclosure: `skills/feature/SKILL.md` restructured from one ~1,570-line file
+  into a lean ~310-line control layer plus two on-demand reference files.** SKILL.md now keeps
+  only what is always needed — purpose, the command routing table, the shared data contracts
+  (`.feature/` layout, `config.yaml`, `change.yaml`, lifecycle states), and the always-on rules
+  (Execution Modes, Git Safety, Error Recovery, Sub-Agent Spawning, Constitution, Traceability,
+  Task Status Lifecycle) — and points to:
+  - `skills/feature/reference/lifecycle.md` — the full phase-execution playbook (Starting a
+    Feature → EXPLORE … → COMPLETE → ARCHIVE);
+  - `skills/feature/reference/commands.md` — the detailed specs for the management/query
+    commands (`resume`, `unblock`, `list`, `status`, `trace`, `impact`, `evolve`, `simulate`,
+    `doctor`, `learn`).
+
+  This follows Agent Skills best practice (keep SKILL.md lean; load detail on demand), cutting
+  the tokens pulled into context when the skill triggers while keeping every command and phase
+  one hop away. **No behavioral change:** all phase and command content was moved verbatim
+  (byte-for-byte), not rewritten, and SKILL.md instructs reading the matching reference file
+  before executing. The manual install path still works — `cp -r skills/feature …` copies the
+  `reference/` directory with it.
+
 ## [1.14.0] - 2026-10-03
 
 ### Changed
@@ -205,7 +227,8 @@ First installable release.
 - The manual install path (`cp -r skills/feature /path/to/project/skills/`) remains
   fully supported for backward compatibility.
 
-[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.14.0...HEAD
+[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.15.0...HEAD
+[1.15.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.15.0
 [1.14.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.14.0
 [1.13.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.13.0
 [1.12.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.12.0
