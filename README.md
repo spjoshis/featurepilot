@@ -52,6 +52,8 @@ cp -r skills/feature /path/to/your/project/skills/
 | `/feature "req" --architecture=developer` | Expert mode — you provide the architecture |
 | `/feature list` | List all features |
 | `/feature status <ID>` | Show feature status |
+| `/feature trace <ID>` | Show Requirement → AC → Task → Test traceability (read-only) |
+| `/feature impact <ID>` | Show a change's blast radius across the codebase and other features (read-only) |
 | `/feature doctor` | Health-check a project's `.feature/` config, constitution, and changes |
 | `/feature resume <ID>` | Resume an interrupted feature |
 | `/feature approve <ID>` | Approve plan for implementation |

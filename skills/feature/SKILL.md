@@ -2,8 +2,8 @@
 name: "feature"
 description: "Feature Development Orchestrator — takes a requirement through explore, specify, design, plan, implement, test, review to completion via /feature."
 status: active
-version: "1.9.0"
-date: "2026-09-26"
+version: "1.10.0"
+date: "2026-10-03"
 slug: feature
 metadata:
   clawdbot:
@@ -39,6 +39,7 @@ Parse the user's input to determine the command:
 | `/feature list [--status=<s>] [--type=<t>] [--mode=<m>] [--sort=<f>]` | List features | Show features with status, filterable and sortable |
 | `/feature status <ID>` | Show status | Detailed status of a feature |
 | `/feature trace <ID>` | Traceability report | Show Requirement → Acceptance Criteria → Task → Test coverage (read-only) |
+| `/feature impact <ID>` | Impact analysis | Show a change's blast radius: direct/indirect impact + other features affected (read-only) |
 | `/feature doctor` | Health check | Validate `.feature/` config, constitution, and changes (read-only) |
 | `/feature resume <ID>` | Resume feature | Continue from last completed phase |
 | `/feature unblock <ID>` | Diagnose/clear blocked | Show why a `blocked` feature/task stopped; retry only on confirmation |
@@ -967,6 +968,88 @@ Summary: 2 acceptance criteria, 1 fully traced, 1 gap, 1 untraced task
 Use `✓` for fully linked+verified, `⚠` for a gap (missing tasks or tests), consistent
 with the symbols `doctor` uses. This command never blocks or requires approval — it is
 purely informational.
+
+## Change Impact Analysis (`/feature impact <ID>`)
+
+**Goal:** Answer "what else could this change affect?" for a single feature — its blast
+radius across the codebase *and* across FeaturePilot's own portfolio of other changes.
+DISCOVER (Phase 3) already records the components *this* feature touches; `impact` extends
+that into the existing components, cross-cutting concerns, and other in-flight or archived
+features that touch the *same* surface and could therefore break or need coordination. Like
+`trace` and `doctor`, this is a **read-only** report — it never modifies `codebase-context.md`,
+`tasks.yaml`, `change.yaml`, `.feature/architecture/overview.md`, or any other file, even when
+it surfaces a conflict. Resolving conflicts stays an architecture/developer decision.
+
+**Availability:** Impact analysis derives from the feature's discovered and designed surface.
+It becomes meaningful once DISCOVER (Phase 3) has written `codebase-context.md`, and sharper
+after ARCHITECTURE (`lld.md`) and PLAN (`tasks.yaml`) add concrete APIs, data changes, and
+per-task impacted components. If the feature has not reached DISCOVER yet, report:
+`No discovered surface yet — impact analysis is available from the discover phase onward.`
+and stop.
+
+**Process:**
+1. Read `change.yaml`. If the ID doesn't exist, report that and stop.
+2. Gather this feature's **changed surface** from whatever artifacts exist (best-effort;
+   skip and note any that are absent rather than guessing):
+   - `codebase-context.md` — the Impacted components section
+     (MODIFIED / ADDED / POTENTIALLY AFFECTED) and the existing patterns it depends on.
+   - `lld.md` — concrete APIs, database/schema changes, events/messages, and configuration
+     changes the design introduces or modifies.
+   - `tasks.yaml` — each task's `impacted_components`.
+   Normalize these into a deduplicated set of surface items, each tagged by kind
+   (file/module, API, data/table, event/queue, config).
+3. Classify impact into tiers:
+   - **Direct** — surface items the feature explicitly adds or modifies (the MODIFIED/ADDED
+     context entries, LLD changes, and task `impacted_components`).
+   - **Indirect** — existing components that *depend on* a Direct item and are not themselves
+     being changed: callers of a modified API, consumers of a changed event/queue, readers of
+     a changed table, modules importing a modified file. Use `codebase-context.md`'s
+     "POTENTIALLY AFFECTED" entries and the discovered dependency/pattern notes. Where the
+     artifacts don't actually establish a dependency, mark it inferred rather than confirmed.
+   - **Regression hotspots** — cross-cutting areas (auth/authz, input validation, rate
+     limiting, migrations, shared middleware) that the Direct/Indirect sets touch and that
+     carry outsized blast radius if they regress.
+4. **Cross-feature impact** — scan `.feature/changes/*` (active) and `.feature/archive/*`
+   (historical), excluding this feature, and flag overlaps where another feature's impacted
+   components or LLD surface intersect this feature's Direct set (same file, API, table, or
+   event). For active features, show their current `status` so the developer can tell live
+   work apart from already-shipped or archived work. Best-effort: only assert an overlap the
+   artifacts support; do not invent dependencies between features.
+5. Rank findings by risk with a transparent heuristic, and count them:
+   - **High** — a Direct change to a regression hotspot, or an overlap with another *active*
+     feature.
+   - **Medium** — Indirect impact, or an overlap with an archived feature.
+   - **Low** — an isolated Direct change with no dependents or overlaps.
+
+**Output:**
+```
+FeaturePilot Impact Analysis — FDO-002 search-improvements
+
+Direct impact
+  ✓ src/api/search.ts              (modified API)
+  ✓ src/services/search-service.ts (modified module)
+  ✓ search_index                   (schema change)
+
+Indirect impact (depends on a direct change; inferred unless noted)
+  ⚠ catalog API       — calls search-service
+  ⚠ reporting job     — reads search_index
+  ⚠ autocomplete      — downstream of search-service (inferred)
+
+Regression hotspots
+  ⚠ authentication middleware — on the search request path
+  ⚠ rate limiting             — search is a known high-volume path
+
+Other FeaturePilot features affected
+  ⚠ FDO-001 bulk-document-processing (status: implement) — also modifies search-service.ts  [active — coordinate]
+  ⚠ FDO-004 audit-export             (archived)          — also reads search_index
+
+Risk summary: 3 high, 4 medium, 2 low
+Missing inputs: lld.md not found (run /feature design FDO-002 for API/schema-level impact)
+```
+
+Use `✓` for a confirmed direct change and `⚠` for something to review (indirect impact, a
+hotspot, or a cross-feature overlap), consistent with the symbols `trace` and `doctor` use.
+This command never blocks or requires approval — it is purely informational.
 
 ## Doctor (Health Check)
 
