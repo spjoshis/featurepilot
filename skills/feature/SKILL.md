@@ -2,7 +2,7 @@
 name: "feature"
 description: "Feature Development Orchestrator — takes a requirement through explore, specify, design, plan, implement, test, review to completion via /feature."
 status: active
-version: "1.11.0"
+version: "1.12.0"
 date: "2026-10-03"
 slug: feature
 metadata:
@@ -41,6 +41,7 @@ Parse the user's input to determine the command:
 | `/feature trace <ID>` | Traceability report | Show Requirement → Acceptance Criteria → Task → Test coverage (read-only) |
 | `/feature impact <ID>` | Impact analysis | Show a change's blast radius: direct/indirect impact + other features affected (read-only) |
 | `/feature evolve` | Portfolio graph | Show the cross-feature dependency/conflict/duplication graph over all active features (read-only) |
+| `/feature simulate <ID>` | Dry-run projection | Project what implementation will produce — files, tests, execution shape, risks — without changing anything (read-only) |
 | `/feature doctor` | Health check | Validate `.feature/` config, constitution, and changes (read-only) |
 | `/feature resume <ID>` | Resume feature | Continue from last completed phase |
 | `/feature unblock <ID>` | Diagnose/clear blocked | Show why a `blocked` feature/task stopped; retry only on confirmation |
@@ -567,6 +568,10 @@ Options:
 ```
 
 **Wait for explicit approval.** Do not proceed without it.
+
+Before approving, the developer can run `/feature simulate <ID>` to preview what
+implementation will produce — expected files, tests, execution shape, and risks — without
+changing anything (read-only). This makes the approval an informed one.
 
 In `--auto` mode: present this summary after running explore→analyze automatically, then wait for approval.
 
@@ -1130,6 +1135,87 @@ Use `✓`/`⚠` consistent with the other read-only commands. `evolve` surfaces 
 possible duplication but never resolves them or edits a feature — reconciliation stays an
 architecture/developer decision, and is exactly the signal a multi-feature effort's
 consistency/consensus step consumes before committing to parallel work.
+
+## Implementation Simulation (`/feature simulate <ID>`)
+
+**Goal:** Before approving a plan, show what IMPLEMENT (Phase 9) is *likely to produce* —
+the expected files created/modified/deleted, the expected tests, the task execution shape
+(parallel groups and ordering), and the risks or likely failure points — **without changing
+a single file**. This turns the APPROVAL gate (Phase 8) into an informed decision: the
+developer approves after seeing a concrete projection of the plan's output, not just the
+plan's prose. Like `impact`, `evolve`, `trace`, and `doctor`, it is **read-only**; it is
+**not** a lifecycle phase, it never spawns an implementation sub-agent, and it never touches
+the working tree or changes the feature's `status`.
+
+It reads the same inputs IMPLEMENT consumes — `tasks.yaml`, `lld.md`, `plan.md`,
+`codebase-context.md`, `acceptance.yaml` — and projects the outcome rather than executing it.
+
+**Availability:** Simulation needs a plan to project from. It is meaningful once PLAN
+(Phase 6) has written `tasks.yaml`, and sharpest once ARCHITECTURE (`lld.md`) has concrete
+files, APIs, and schema changes. If the feature has not reached PLAN, report:
+`No plan yet — simulation is available from the plan phase onward (run /feature plan <ID> first).`
+and stop. It is best run just before APPROVAL.
+
+**Process:**
+1. Read `change.yaml`. If the ID doesn't exist, report that and stop.
+2. Read the plan inputs (best-effort; note any that are absent rather than guessing):
+   `tasks.yaml` (tasks, `dependencies`, `parallel_group`, `testing`, `impacted_components`,
+   `attempts`/`max_retries`), `lld.md` (files/modules, APIs, schema changes, config), `plan.md`,
+   `codebase-context.md` (which files already exist vs. would be new), `acceptance.yaml`.
+3. Project the **file footprint**: classify each expected path from the LLD and tasks as
+   added (`+`), modified (`~`), or deleted (`−`). Decide modified-vs-added from whether
+   `codebase-context.md` lists the file as already existing. Where a change is named but no
+   concrete path can be resolved, count it as `?` unresolved rather than inventing a number.
+4. Project the **test footprint**: from each task's `testing:` list and the LLD testing
+   strategy, tally expected unit/integration/e2e tests, and map them back to acceptance
+   criteria. An acceptance criterion with no projected test is a warning.
+5. Project the **execution shape**: task count, parallel groups (from `parallel_group`), and
+   the dependency-ordered sequence. Flag tasks whose dependencies are unmet or reference a
+   task that does not exist, and tasks already at `attempts >= max_retries` from a prior run.
+6. Detect **risks / likely failures** from the artifacts, e.g.: a migration not marked
+   backward-compatible in the LLD; an API consumed by several existing modules (the same
+   signal `/feature impact` surfaces); a task with a missing/unclear dependency; an acceptance
+   criterion with no implementing task (reuse the ANALYZE checks); external calls with no
+   timeout handling where the constitution requires it.
+7. Produce a **verdict**: `READY` (no warnings), `READY WITH N WARNINGS`, or `NOT READY`
+   (a critical gap such as an AC with no task, or a dependency on a nonexistent task). This
+   mirrors the spirit of ANALYZE, but it is a projection, not a gate — it never changes
+   `status` and never blocks.
+
+**Output:**
+```
+Implementation Simulation — FDO-002 search-improvements  (status: analyze)
+
+Expected file changes
+  + 6 new       (e.g. src/services/search-service.ts, src/api/search.ts)
+  ~ 9 modified
+  − 1 deleted
+  ? 2 unresolved (LLD names a change but no concrete path yet)
+
+Expected tests
+  + 14 unit, + 5 integration, + 2 e2e
+  AC coverage: 7 / 8 criteria have a projected test
+    ⚠ AC-006 "search telemetry recorded" — no test projected
+
+Execution shape
+  8 tasks across 3 parallel groups
+    group 1: TASK-001, TASK-002            (no deps)
+    group 2: TASK-003, TASK-004, TASK-005
+    group 3: TASK-006, TASK-007, TASK-008
+  ⚠ TASK-007 depends on TASK-009, which does not exist
+
+Risks / likely failures
+  ⚠ migration in lld.md is not marked backward-compatible
+  ⚠ search-service API is consumed by 3 existing modules (see /feature impact FDO-002)
+  ⚠ TASK-004 is already at attempts 3/3 from a prior run
+
+Verdict: READY WITH 3 WARNINGS
+(No files were changed — this is a projection of what /feature implement would do.)
+```
+
+Use `✓`/`⚠`/`✗` consistent with `doctor` and `analyze`. Simulation never modifies files,
+never spawns implementation sub-agents, and never changes the feature's `status` — the
+developer still runs `/feature approve` and `/feature implement` to actually proceed.
 
 ## Doctor (Health Check)
 
