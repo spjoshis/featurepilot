@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-10-03
+
+### Added
+- `/feature impact <ID>` — a read-only change-impact (blast-radius) report. DISCOVER
+  already records the components a feature touches; `impact` turns that into an explicit
+  answer to "what else could this change break or require coordination with?" It reads the
+  feature's `codebase-context.md`, `lld.md`, and `tasks.yaml` to assemble the changed
+  surface, then classifies it into **direct** impact, **indirect** impact (existing
+  dependents of a direct change — callers, consumers, readers), and **regression hotspots**
+  (cross-cutting concerns like auth, validation, rate limiting, migrations). It also scans
+  the other features under `.feature/changes/` and `.feature/archive/` and flags overlaps
+  where another feature touches the same file, API, table, or event — surfacing conflicts
+  and coordination needs across FeaturePilot's own change portfolio, not just one feature at
+  a time. Findings are risk-ranked (high/medium/low) with a transparent heuristic. Like
+  `trace` and `doctor`, it is strictly read-only and never modifies any `.feature/` file,
+  even when it surfaces a conflict — resolution stays an architecture/developer decision.
+
 ## [1.9.0] - 2026-09-26
 
 ### Fixed
@@ -118,7 +135,8 @@ First installable release.
 - The manual install path (`cp -r skills/feature /path/to/project/skills/`) remains
   fully supported for backward compatibility.
 
-[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.10.0...HEAD
+[1.10.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.10.0
 [1.9.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.9.0
 [1.8.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.8.0
 [1.7.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.7.0
