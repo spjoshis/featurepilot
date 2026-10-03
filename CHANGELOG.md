@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-10-03
+
+### Added
+- `/feature simulate <ID>` — a read-only pre-implementation dry run. It reads the same
+  inputs IMPLEMENT consumes (`tasks.yaml`, `lld.md`, `plan.md`, `codebase-context.md`,
+  `acceptance.yaml`) and projects what implementation *would* produce — expected file
+  footprint (added/modified/deleted/unresolved), expected tests mapped to acceptance
+  criteria, task execution shape (parallel groups and ordering), and risks/likely failure
+  points (non-backward-compatible migrations, APIs with many existing consumers, tasks with
+  missing dependencies, ACs with no implementing task) — ending in a `READY` /
+  `READY WITH N WARNINGS` / `NOT READY` verdict. It changes no files, spawns no
+  implementation sub-agent, and never alters the feature's `status`. The APPROVAL phase now
+  points developers to it so the plan approval can be made after seeing a concrete
+  projection of its output, not just the plan prose. Available from the PLAN phase onward.
+
 ## [1.11.0] - 2026-10-03
 
 ### Added
@@ -156,7 +171,8 @@ First installable release.
 - The manual install path (`cp -r skills/feature /path/to/project/skills/`) remains
   fully supported for backward compatibility.
 
-[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.11.0...HEAD
+[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.12.0...HEAD
+[1.12.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.12.0
 [1.11.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.11.0
 [1.10.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.10.0
 [1.9.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.9.0

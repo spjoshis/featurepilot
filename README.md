@@ -55,6 +55,7 @@ cp -r skills/feature /path/to/your/project/skills/
 | `/feature trace <ID>` | Show Requirement → AC → Task → Test traceability (read-only) |
 | `/feature impact <ID>` | Show a change's blast radius across the codebase and other features (read-only) |
 | `/feature evolve` | Show the cross-feature dependency/conflict/duplication graph over all active features (read-only) |
+| `/feature simulate <ID>` | Dry-run a plan: preview files, tests, execution shape, and risks before approving (read-only) |
 | `/feature doctor` | Health-check a project's `.feature/` config, constitution, and changes |
 | `/feature resume <ID>` | Resume an interrupted feature |
 | `/feature unblock <ID>` | Diagnose a `blocked` feature and, on confirmation, retry it |
