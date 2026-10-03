@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-10-03
+
+### Added
+- `/feature evolve` — a read-only, portfolio-wide cross-feature graph. Where
+  `/feature impact <ID>` looks outward from one feature (its blast radius, including which
+  other features it overlaps), `evolve` steps up a level and correlates *all* active features
+  under `.feature/changes/` with each other: it reuses the same changed-surface extraction
+  (`codebase-context.md`, `lld.md`, `tasks.yaml`) across every active feature and reports
+  **shared components** (any surface item touched by 2+ features), **conflicts** (two features
+  that both *modify* the same item), **dependencies** (a feature that reads an item another
+  feature writes), and **possible duplication** (two features introducing the same new
+  capability). It also cross-checks active features' modifications against archived/shipped
+  features to flag regression-against-shipped risk. Findings are risk-ranked (high/medium/low).
+  This is the tool for seeing conflicts before they collide when several features — often
+  several agents — are in flight at once. Strictly read-only; it surfaces conflicts but never
+  resolves them or edits a feature.
+
+### Docs
+- README command table now lists `/feature evolve` and the previously-omitted
+  `/feature unblock` (shipped in v1.7.0 but never added to the README).
+
 ## [1.10.0] - 2026-10-03
 
 ### Added
@@ -135,7 +156,8 @@ First installable release.
 - The manual install path (`cp -r skills/feature /path/to/project/skills/`) remains
   fully supported for backward compatibility.
 
-[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.10.0...HEAD
+[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.11.0...HEAD
+[1.11.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.11.0
 [1.10.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.10.0
 [1.9.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.9.0
 [1.8.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.8.0
