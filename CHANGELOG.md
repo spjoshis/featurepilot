@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-10-03
+
+### Added
+- `/feature learn <ID>` — distills a *completed* feature's durable lessons into project-level
+  engineering memory under `.feature/knowledge/` (`patterns.md`, `pitfalls.md`, `testing.md`,
+  `architecture.md`, `decisions.md`). It mines the feature's `code-review.md`, `convergence.md`,
+  `test-results.md`, `decisions.md`/ADRs, `implementation.md`, and `codebase-context.md` for
+  *generalizable* rules, phrases each as a short entry attributed to its source feature,
+  de-duplicates against what's already recorded, and — crucially — **appends only, never
+  overwrites, and asks before writing** (the same discipline DISCOVER uses for
+  `architecture/overview.md`). This closes the loop
+  Feature → Implementation → Review → Learn → Project memory → better next feature.
+- DISCOVER (Phase 3) now reads `.feature/knowledge/*.md` alongside `architecture/overview.md`
+  as baseline context, so distilled lessons actively shape future discovery and design instead
+  of sitting inert.
+- `doctor` gains a matching optional check for `.feature/knowledge/` (absent is fine; present
+  warns on an empty knowledge file — same pattern as the `overview.md`/`constitution.md`
+  checks).
+- Directory Structure now documents the `.feature/knowledge/` store.
+
 ## [1.12.0] - 2026-10-03
 
 ### Added
@@ -171,7 +191,8 @@ First installable release.
 - The manual install path (`cp -r skills/feature /path/to/project/skills/`) remains
   fully supported for backward compatibility.
 
-[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.12.0...HEAD
+[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.13.0...HEAD
+[1.13.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.13.0
 [1.12.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.12.0
 [1.11.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.11.0
 [1.10.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.10.0
