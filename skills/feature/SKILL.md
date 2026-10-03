@@ -2,7 +2,7 @@
 name: "feature"
 description: "Feature Development Orchestrator — takes a requirement through explore, specify, design, plan, implement, test, review to completion via /feature."
 status: active
-version: "1.10.0"
+version: "1.11.0"
 date: "2026-10-03"
 slug: feature
 metadata:
@@ -40,6 +40,7 @@ Parse the user's input to determine the command:
 | `/feature status <ID>` | Show status | Detailed status of a feature |
 | `/feature trace <ID>` | Traceability report | Show Requirement → Acceptance Criteria → Task → Test coverage (read-only) |
 | `/feature impact <ID>` | Impact analysis | Show a change's blast radius: direct/indirect impact + other features affected (read-only) |
+| `/feature evolve` | Portfolio graph | Show the cross-feature dependency/conflict/duplication graph over all active features (read-only) |
 | `/feature doctor` | Health check | Validate `.feature/` config, constitution, and changes (read-only) |
 | `/feature resume <ID>` | Resume feature | Continue from last completed phase |
 | `/feature unblock <ID>` | Diagnose/clear blocked | Show why a `blocked` feature/task stopped; retry only on confirmation |
@@ -1050,6 +1051,85 @@ Missing inputs: lld.md not found (run /feature design FDO-002 for API/schema-lev
 Use `✓` for a confirmed direct change and `⚠` for something to review (indirect impact, a
 hotspot, or a cross-feature overlap), consistent with the symbols `trace` and `doctor` use.
 This command never blocks or requires approval — it is purely informational.
+
+## Cross-Feature Evolution (`/feature evolve`)
+
+**Goal:** Give a portfolio-wide view of how all *active* features relate — the dependency,
+conflict, and duplication graph across the whole set of in-flight changes, not one feature's
+blast radius. Where `/feature impact <ID>` answers "what does *this* change affect?" (one
+feature looking outward), `evolve` answers "how do all the in-flight features relate to *each
+other*?" (the whole many-to-many graph). It is the natural tool when several features — often
+several agents — are in flight at once and you need to see conflicts and shared surface before
+they collide. It reuses the same per-feature changed-surface extraction `impact` uses, applied
+across every active feature. Like `impact`, `trace`, and `doctor`, it is **read-only** — it
+never modifies any `.feature/` file, and it surfaces conflicts without resolving them.
+
+**Availability:** Operates over `.feature/changes/*` (active features; archived features are
+historical and are only cross-checked in step 4, not treated as nodes). If there are fewer
+than two active features, report that `evolve` needs at least two active features to show
+relationships and stop. Features that haven't reached DISCOVER yet have no derivable surface;
+list them as "not yet analyzable" rather than dropping them silently.
+
+**Process:**
+1. Enumerate every active feature under `.feature/changes/*`. For each, read `change.yaml`
+   for `id`, `name`, and `status`.
+2. For each feature, extract its **changed surface** exactly as `impact` does — from
+   `codebase-context.md`, `lld.md`, and `tasks.yaml` — normalized and tagged by kind
+   (file/module, API, data/table, event/queue, config). Keep a per-item note of whether the
+   feature *adds/modifies* it (a write) or *reads/consumes* it (a read). Features with no
+   derivable surface stay in the roster but contribute no edges.
+3. Build the relationships across the active set:
+   - **Shared components** — any surface item touched by 2+ features. This is the backbone of
+     the graph.
+   - **Conflicts** — two features that both *modify* the same item (not merely both read it):
+     concurrent-modification risk, the highest-attention edges.
+   - **Dependencies** — a directional edge from a feature that *reads/consumes* an item to the
+     feature that *adds/modifies* it (the reader depends on the writer). Use the same
+     inferred-vs-confirmed distinction as `impact`: only call it confirmed when the artifacts
+     establish the link.
+   - **Possible duplication** — two features whose *added* surface or stated requirement
+     describes the same new capability (e.g. both introducing a `search_index` or the same
+     endpoint). Flag for a human to deduplicate; never assert duplication as certain.
+4. Cross-check each active feature's *modify* set against the **archived/completed** features'
+   surface (shipped work): an active feature modifying something a shipped feature relied on is
+   a regression-against-shipped signal. Use `.feature/architecture/overview.md` if present to
+   anchor durable component names.
+5. Rank edges and count them: a **conflict**, or an overlap with an active feature currently in
+   `implement`/`fix` (live code work) → **High**; a **dependency** or a shared read → **Medium**;
+   a regression-against-shipped (archived) overlap → noted separately.
+
+**Output:**
+```
+FeaturePilot Evolution — 4 active features
+
+Dependency graph
+  FDO-007 add-search-service ──┐
+                               ├──→ FDO-015 search-ranking   (depends on: search-service)
+  FDO-009 search-index ────────┘
+
+  FDO-015 search-ranking  ── conflicts ──  FDO-011 search-cache   (both modify search-service.ts)
+
+Shared components
+  src/services/search-service.ts  — FDO-011 (implement), FDO-015 (plan)   ⚠ conflict
+  search_index (table)            — FDO-007 (plan), FDO-009 (plan)
+  audit-event (queue)             — FDO-009, FDO-015
+
+Possible duplication
+  ⚠ FDO-007 and FDO-009 both introduce a search index — confirm these aren't the same work
+
+Regression-against-shipped
+  ⚠ FDO-011 modifies rate-limiting, relied on by archived FDO-004 audit-export
+
+Not yet analyzable (pre-discover)
+  FDO-016 search-synonyms (status: explore)
+
+Risk summary: 2 high, 3 medium; 5 shared components across 4 features
+```
+
+Use `✓`/`⚠` consistent with the other read-only commands. `evolve` surfaces conflicts and
+possible duplication but never resolves them or edits a feature — reconciliation stays an
+architecture/developer decision, and is exactly the signal a multi-feature effort's
+consistency/consensus step consumes before committing to parallel work.
 
 ## Doctor (Health Check)
 
