@@ -2,7 +2,7 @@
 name: "feature"
 description: "Feature Development Orchestrator — takes a requirement through explore, specify, design, plan, implement, test, review to completion via /feature."
 status: active
-version: "1.13.0"
+version: "1.14.0"
 date: "2026-10-03"
 slug: feature
 metadata:
@@ -928,13 +928,74 @@ When `/feature list` is invoked:
 6. If filters matched zero features, report which filters were applied and that nothing matched — do not print an empty table.
 7. End with a count: `3 features shown` (or `2 of 5 features shown` when filtered).
 
-## Status
+## Status (`/feature status <ID>`)
 
-When `/feature status <ID>` is invoked:
+**Goal:** Give a complete, at-a-glance picture of one feature — where it is in the lifecycle,
+the status of each phase, task progress while implementing, any blocking condition, a
+traceability snapshot, and, most importantly, **the single recommended next action**.
+`status` is the command a developer reaches for most often ("where is this, and what do I do
+next?"), so it doubles as the hub that points to the right next command for the feature's
+current state. It is **read-only** — it never changes state or requires approval.
 
-1. Read `change.yaml`
-2. If status is `implement`, read `tasks.yaml` for task progress
-3. Present detailed status with all phase statuses
+**Process:**
+1. Read `change.yaml`. If the ID doesn't exist, report that and stop.
+2. Build the **phase checklist** across the lifecycle states, marking each `✓` done,
+   `▶` current, or `·` pending from `status` and the per-phase sub-statuses in `change.yaml`
+   (`specification.status`, `architecture.hld`/`lld`, `analysis.status`, `plan.status`,
+   `implementation.status`, `testing.status`, `convergence.status`, `code_review.status`).
+3. If implementation has started (`status: implement` or later), read `tasks.yaml` and
+   summarize task progress: counts by task status
+   (`pending`/`ready`/`in_progress`/`completed`/`validated`/`failed`/`blocked`), and name any
+   `blocked` or `failed` task.
+4. If `status: blocked`, identify the origin the same way `/feature unblock` does (which
+   attempt budget or cycle is exhausted) and surface it in one line.
+5. If `acceptance.yaml` exists, add a one-line **traceability summary** (N criteria, M fully
+   traced, K gaps) — the headline numbers `/feature trace` would show, without reproducing the
+   full report.
+6. Determine the **recommended next action** from the current `status` and present it as a
+   concrete command:
+   - `new`/`explore`/`specify`/`discover`/`brainstorm`/`architecture`/`hld`/`lld` →
+     `/feature resume <ID>` to continue the next phase (note `/feature impact <ID>` is
+     available to preview blast radius while designing).
+   - `plan`/`analyze` → `/feature simulate <ID>` to preview the plan, then
+     `/feature approve <ID>`.
+   - `approval` → `/feature approve <ID>` (suggest `/feature simulate <ID>` first if not yet run).
+   - `implement`/`test`/`converge`/`code_review`/`fix` → `/feature resume <ID>`; if any task is
+     blocked, `/feature unblock <ID>`.
+   - `blocked` → `/feature unblock <ID>` (never `resume`).
+   - `complete` → `/feature learn <ID>` to capture lessons, then `/feature archive <ID>`.
+   - `archive` → none; it is historical.
+
+**Output:**
+```
+FeaturePilot Status — FDO-002 search-improvements
+Type: feature   Mode: guided   Status: analyze
+Created 2026-10-01   Updated 2026-10-03
+
+Phases
+  ✓ explore   ✓ specify   ✓ discover   ✓ brainstorm
+  ✓ architecture (hld ✓, lld ✓)   ✓ plan   ▶ analyze   · approval
+  · implement   · test   · converge   · code_review   · complete
+
+Traceability: 8 acceptance criteria — 6 fully traced, 2 gaps (/feature trace FDO-002)
+
+Next action
+  ▶ /feature simulate FDO-002   preview the files/tests/risks this plan will produce
+    then /feature approve FDO-002 to start implementation
+```
+
+While implementing, replace the traceability line with task progress, e.g.:
+```
+Status: implement
+Tasks: 8 total — 5 validated, 1 in_progress, 1 ready, 1 blocked
+  ⚠ TASK-004 blocked (attempts 3/3)
+
+Next action
+  ▶ /feature unblock FDO-002   a task is blocked; diagnose and retry
+```
+
+Use `✓`/`▶`/`·`/`⚠` consistently with the other commands. `status` never changes state — it
+only reports and points to the next step.
 
 ## Traceability (`/feature trace <ID>`)
 

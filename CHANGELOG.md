@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-10-03
+
+### Changed
+- `/feature status <ID>` is now a fully specified, first-class command instead of a
+  three-line stub. It renders a phase checklist (`✓` done / `▶` current / `·` pending) built
+  from `change.yaml`'s per-phase sub-statuses, task progress (counts by task status, naming
+  any blocked/failed task) once implementation has started, a one-line traceability summary
+  when `acceptance.yaml` exists, and — most usefully — a **recommended next action** mapped
+  from the current lifecycle state to a concrete command (`resume`/`simulate`/`approve`/
+  `unblock`/`learn`/`archive`, plus an `impact` pointer while designing). This makes the
+  most-used command the hub that answers "where is this, and what do I do next?", and brings
+  it up to parity with the worked specs its sibling read-only commands (`list`/`trace`/
+  `doctor`/`impact`/`evolve`/`simulate`) already had. Still strictly read-only.
+
 ## [1.13.0] - 2026-10-03
 
 ### Added
@@ -191,7 +205,8 @@ First installable release.
 - The manual install path (`cp -r skills/feature /path/to/project/skills/`) remains
   fully supported for backward compatibility.
 
-[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.13.0...HEAD
+[Unreleased]: https://github.com/spjoshis/featurepilot/compare/v1.14.0...HEAD
+[1.14.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.14.0
 [1.13.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.13.0
 [1.12.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.12.0
 [1.11.0]: https://github.com/spjoshis/featurepilot/releases/tag/v1.11.0
